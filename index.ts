@@ -35,17 +35,6 @@ db.run(`
 `);
 console.log("Database schema initialized");
 
-// Add new table for IP limits
-db.run(`
-  CREATE TABLE IF NOT EXISTS ip_limits (
-    ip TEXT,
-    date TEXT,
-    count INTEGER DEFAULT 0,
-    PRIMARY KEY (ip, date)
-  )
-`);
-console.log("IP limits table initialized");
-
 // Function to increment the PDF counter
 function incrementPDFCounter() {
   const date = new Date().toISOString().split("T")[0];
@@ -61,24 +50,6 @@ function getTotalPDFsGenerated(): number {
     .query("SELECT SUM(count) as total FROM pdf_counters")
     .get() as { total: number | null };
   return result && result.total !== null ? result.total : 0;
-}
-
-// Function to check and update IP limit
-function checkAndUpdateIPLimit(ip: string): boolean {
-  const date = new Date().toISOString().split("T")[0];
-  const result = db
-    .query("SELECT count FROM ip_limits WHERE ip = ? AND date = ?")
-    .get(ip, date) as { count: number } | null;
-
-  if (!result || result.count < 60) {
-    db.run(
-      "INSERT OR REPLACE INTO ip_limits (ip, date, count) VALUES (?, ?, COALESCE((SELECT count FROM ip_limits WHERE ip = ? AND date = ?) + 1, 1))",
-      [ip, date, ip, date]
-    );
-    return true;
-  }
-
-  return false;
 }
 
 async function runTask<T>(task: () => Promise<T>): Promise<T> {
@@ -263,17 +234,6 @@ const server = serve({
     ) {
       if (!validateRequest(req)) {
         return new Response("Unauthorized", { status: 401 });
-      }
-
-      const ip = req.headers.get("X-Forwarded-For") || "unknown";
-      if (!checkAndUpdateIPLimit(ip)) {
-        return new Response(JSON.stringify({ error: "Daily limit exceeded" }), {
-          status: 429,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        });
       }
 
       try {

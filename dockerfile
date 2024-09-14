@@ -27,8 +27,8 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Clone the repository using a more robust method
-RUN git clone https://github.com/pujan-modha/mr-server.git . || \
-    (git init && git remote add origin https://github.com/pujan-modha/mr-server.git && \
+RUN git clone https://github.com/pujan-modha/mr-backend.git . || \
+    (git init && git remote add origin https://github.com/pujan-modha/mr-backend.git && \
      git fetch --depth=1 origin && git checkout origin/main)
 
 # Install dependencies
